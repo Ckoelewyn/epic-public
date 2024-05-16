@@ -34,33 +34,35 @@ jobs:
       - name: Tag image
         run: |
           oc -n ${{ env.OPENSHIFT_NAMESPACE }} tag --reference-policy='local' ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:test
-  promotion:
-    name: Creates Promotion to Prod Pull Request
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout promotion/prod
-        uses: actions/checkout@v2
-        with: 
-          ref: "${{ env.PROD_PROMO_BRANCH }}"
-      - name: Update state.json
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{github.actor}}@users.noreply.github.com"
-          git checkout -B ${{ env.PROD_PROMO_PR_BRANCH }}
-          git reset --hard ${{ env.PROD_PROMO_BRANCH }}
-          echo $(jq '.commit="${{ needs.deploy.outputs.COMMIT_SHA }}"' state.json) > state.json
-          git commit -am "Promote commit ${{ needs.deploy.outputs.COMMIT_SHA }} to Production"
-          git push --force origin ${{ env.PROD_PROMO_PR_BRANCH }}          
-      - name: Create Pull Request
-        uses: repo-sync/pull-request@v2
-        with:
-          source_branch: ${{ env.PROD_PROMO_PR_BRANCH }}
-          destination_branch: ${{ env.PROD_PROMO_BRANCH }}
-          pr_title: "Deploy to Production Environment"
-          pr_body: |
-            :crown: *An automated PR*
-            This PR triggers an deployment to Production once it's fully merged.
-          pr_label: "auto-pr,prod env,pipeline"
-          pr_draft: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+  # When the project is ready for a production branch, a promote-to-prod action and a promotion/prod branch need to be created
+  # The code below will create a draft PR when uncommented
+  # promotion:
+  #   name: Creates Promotion to Prod Pull Request
+  #   needs: deploy
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout promotion/prod
+  #       uses: actions/checkout@v2
+  #       with: 
+  #         ref: "${{ env.PROD_PROMO_BRANCH }}"
+  #     - name: Update state.json
+  #       run: |
+  #         git config --global user.name "${{ github.actor }}"
+  #         git config --global user.email "${{github.actor}}@users.noreply.github.com"
+  #         git checkout -B ${{ env.PROD_PROMO_PR_BRANCH }}
+  #         git reset --hard ${{ env.PROD_PROMO_BRANCH }}
+  #         echo $(jq '.commit="${{ needs.deploy.outputs.COMMIT_SHA }}"' state.json) > state.json
+  #         git commit -am "Promote commit ${{ needs.deploy.outputs.COMMIT_SHA }} to Production"
+  #         git push --force origin ${{ env.PROD_PROMO_PR_BRANCH }}          
+  #     - name: Create Pull Request
+  #       uses: repo-sync/pull-request@v2
+  #       with:
+  #         source_branch: ${{ env.PROD_PROMO_PR_BRANCH }}
+  #         destination_branch: ${{ env.PROD_PROMO_BRANCH }}
+  #         pr_title: "Deploy to Production Environment"
+  #         pr_body: |
+  #           :crown: *An automated PR*
+  #           This PR triggers an deployment to Production once it's fully merged.
+  #         pr_label: "auto-pr,prod env,pipeline"
+  #         pr_draft: true
+  #         github_token: ${{ secrets.GITHUB_TOKEN }}
